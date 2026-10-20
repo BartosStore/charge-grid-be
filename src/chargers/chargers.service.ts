@@ -1,51 +1,58 @@
+import { Collection, Database } from '@apify/hiring-document-database';
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { generateId } from '../common/generate-id.js';
 import { LocationsService } from '../locations/locations.service.js';
-import type { Charger } from './charger.entity.js';
-import { FAKE_CHARGERS } from './chargers.fake-data.js';
+import { CHARGERS_COLLECTION, type Charger } from './charger.entity.js';
 import { CreateChargerDto } from './dto/create-charger.dto.js';
 import { UpdateChargerDto } from './dto/update-charger.dto.js';
 
 @Injectable()
 export class ChargersService {
-  // In-memory store seeded with fake data; replaced by a database later.
-  private readonly chargers: Charger[] = structuredClone(FAKE_CHARGERS);
+  private readonly chargers: Collection;
 
-  constructor(private readonly locationsService: LocationsService) {}
-
-  findAll(locationId?: string): Charger[] {
-    return locationId
-      ? this.chargers.filter((charger) => charger.locationId === locationId)
-      : this.chargers;
+  constructor(
+    db: Database,
+    private readonly locationsService: LocationsService,
+  ) {
+    this.chargers = db.collection(CHARGERS_COLLECTION);
   }
 
-  findOne(id: string): Charger {
-    const charger = this.chargers.find((charger) => charger._id === id);
+  async findAll(locationId?: string): Promise<Charger[]> {
+    const filter = locationId ? { locationId } : {};
+    return (await this.chargers.list(filter).toArray()) as Charger[];
+  }
+
+  async findOne(id: string): Promise<Charger> {
+    const charger = await this.chargers.get(id);
     if (!charger) {
       throw new NotFoundException(`Charger ${id} not found`);
     }
-    return charger;
+    return charger as Charger;
   }
 
-  create(dto: CreateChargerDto): Charger {
+  async create(dto: CreateChargerDto): Promise<Charger> {
     // Throws 404 when the location does not exist.
-    this.locationsService.findOne(dto.locationId);
-    const newCharger: Charger = { _id: generateId(), ...dto };
-    this.chargers.push(newCharger);
-    return newCharger;
+    await this.locationsService.findOne(dto.locationId);
+    return (await this.chargers.insert({
+      _id: generateId(),
+      ...dto,
+    })) as Charger;
   }
 
-  update(id: string, dto: UpdateChargerDto): Charger {
-    const charger = this.findOne(id);
+  async update(id: string, dto: UpdateChargerDto): Promise<Charger> {
     if (dto.locationId) {
-      this.locationsService.findOne(dto.locationId);
+      await this.locationsService.findOne(dto.locationId);
     }
-    Object.assign(charger, dto);
-    return charger;
+    const { numMatched } = await this.chargers.update({ _id: id }, { ...dto });
+    if (numMatched === 0) {
+      throw new NotFoundException(`Charger ${id} not found`);
+    }
+    return this.findOne(id);
   }
 
-  remove(id: string): void {
-    const charger = this.findOne(id);
-    this.chargers.splice(this.chargers.indexOf(charger), 1);
+  async remove(id: string): Promise<void> {
+    if (!(await this.chargers.delete(id))) {
+      throw new NotFoundException(`Charger ${id} not found`);
+    }
   }
 }

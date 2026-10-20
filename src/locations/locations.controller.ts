@@ -19,28 +19,31 @@ export class LocationsController {
   constructor(private readonly locationsService: LocationsService) {}
 
   @Get()
-  findAll(): Location[] {
+  findAll(): Promise<Location[]> {
     return this.locationsService.findAll();
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string): Location {
+  findOne(@Param('id') id: string): Promise<Location> {
     return this.locationsService.findOne(id);
   }
 
   @Post()
-  create(@Body() dto: CreateLocationDto): Location {
+  create(@Body() dto: CreateLocationDto): Promise<Location> {
     return this.locationsService.create(dto);
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() dto: UpdateLocationDto): Location {
+  update(
+    @Param('id') id: string,
+    @Body() dto: UpdateLocationDto,
+  ): Promise<Location> {
     return this.locationsService.update(id, dto);
   }
 
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  remove(@Param('id') id: string): void {
-    this.locationsService.remove(id);
+  remove(@Param('id') id: string): Promise<void> {
+    return this.locationsService.remove(id);
   }
 }

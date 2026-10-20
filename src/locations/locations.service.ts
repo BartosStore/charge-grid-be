@@ -1,41 +1,48 @@
+import { Collection, Database } from '@apify/hiring-document-database';
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { generateId } from '../common/generate-id.js';
 import { CreateLocationDto } from './dto/create-location.dto.js';
 import { UpdateLocationDto } from './dto/update-location.dto.js';
-import { Location } from './location.entity.js';
-import { FAKE_LOCATIONS } from './locations.fake-data.js';
+import { LOCATIONS_COLLECTION, type Location } from './location.entity.js';
 
 @Injectable()
 export class LocationsService {
-  // In-memory store seeded with fake data; replaced by a database later.
-  private readonly locations: Location[] = structuredClone(FAKE_LOCATIONS);
+  private readonly locations: Collection;
 
-  findAll(): Location[] {
-    return this.locations;
+  constructor(db: Database) {
+    this.locations = db.collection(LOCATIONS_COLLECTION);
   }
 
-  findOne(id: string): Location {
-    const location = this.locations.find((l) => l._id === id);
+  async findAll(): Promise<Location[]> {
+    return (await this.locations.list().toArray()) as Location[];
+  }
+
+  async findOne(id: string): Promise<Location> {
+    const location = await this.locations.get(id);
     if (!location) {
       throw new NotFoundException(`Location ${id} not found`);
     }
-    return location;
+    return location as Location;
   }
 
-  create(dto: CreateLocationDto): Location {
-    const location: Location = { _id: generateId(), ...dto };
-    this.locations.push(location);
-    return location;
+  async create(dto: CreateLocationDto): Promise<Location> {
+    return (await this.locations.insert({
+      _id: generateId(),
+      ...dto,
+    })) as Location;
   }
 
-  update(id: string, dto: UpdateLocationDto): Location {
-    const location = this.findOne(id);
-    Object.assign(location, dto);
-    return location;
+  async update(id: string, dto: UpdateLocationDto): Promise<Location> {
+    const { numMatched } = await this.locations.update({ _id: id }, { ...dto });
+    if (numMatched === 0) {
+      throw new NotFoundException(`Location ${id} not found`);
+    }
+    return this.findOne(id);
   }
 
-  remove(id: string): void {
-    const location = this.findOne(id);
-    this.locations.splice(this.locations.indexOf(location), 1);
+  async remove(id: string): Promise<void> {
+    if (!(await this.locations.delete(id))) {
+      throw new NotFoundException(`Location ${id} not found`);
+    }
   }
 }

@@ -1,3 +1,5 @@
+export const LOCATIONS_COLLECTION = 'locations';
+
 export const REGIONS = [
   'Hlavní město Praha',
   'Středočeský kraj',
@@ -17,9 +19,10 @@ export const REGIONS = [
 
 export type Region = (typeof REGIONS)[number];
 
-export interface Location {
+// A type alias (not an interface) so it is assignable to the DB's `Document`.
+export type Location = {
   _id: string;
   name: string;
   city: string;
   region: Region;
-}
+};
