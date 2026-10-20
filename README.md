@@ -139,6 +139,8 @@ src/
 ├── app.module.ts               # root module
 ├── common/
 │   └── generate-id.ts          # ObjectId-like ID generator
+├── db/
+│   └── db.module.ts            # global Database provider, seeded with fake data
 ├── locations/
 │   ├── dto/                    # create / update DTOs with validation rules
 │   ├── location.entity.ts      # Location model + list of Czech regions
@@ -175,6 +177,6 @@ src/
 - [x] Project setup (NestJS 12, TypeScript, Vitest, oxlint)
 - [x] `Location` and `Charger` modules with CRUD and validation
 - [x] Seed data for 5 locations and 8 chargers
-- [ ] Move persistence from plain arrays to `@apify/hiring-document-database`
+- [x] Persistence in `@apify/hiring-document-database` (in memory, reset on restart)
 - [ ] Dashboard endpoint (one card per charger)
 - [ ] Unit and e2e tests for both modules
