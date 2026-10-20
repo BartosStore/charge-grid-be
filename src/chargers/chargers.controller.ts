@@ -10,6 +10,7 @@ import {
   Post,
   Query,
 } from '@nestjs/common';
+import type { ChargerStats } from './charger-stats.js';
 import type { Charger } from './charger.entity.js';
 import { ChargersService } from './chargers.service.js';
 import { CreateChargerDto } from './dto/create-charger.dto.js';
@@ -22,6 +23,12 @@ export class ChargersController {
   @Get()
   findAll(@Query('locationId') locationId?: string): Promise<Charger[]> {
     return this.chargersService.findAll(locationId);
+  }
+
+  // Must stay above @Get(':id'), otherwise "stats" would be matched as an id.
+  @Get('stats')
+  getStats(@Query('locationId') locationId?: string): Promise<ChargerStats> {
+    return this.chargersService.getStats(locationId);
   }
 
   @Get(':id')

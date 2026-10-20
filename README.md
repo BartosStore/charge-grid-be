@@ -88,12 +88,30 @@ an unknown field or an invalid value, the API responds with `400 Bad Request`.
 | -------- | -------------------------------- | ------------------------------ | ------- |
 | `GET`    | `/chargers`                      | List all chargers              | `200`   |
 | `GET`    | `/chargers?locationId=<id>`      | List chargers at one location  | `200`   |
+| `GET`    | `/chargers/stats`                | Status counts for the dashboard | `200`  |
+| `GET`    | `/chargers/stats?locationId=<id>`| Status counts for one location | `200`   |
 | `GET`    | `/chargers/:id`                  | Get one charger                | `200`   |
 | `POST`   | `/chargers`                      | Create a charger               | `201`   |
 | `PATCH`  | `/chargers/:id`                  | Partially update               | `200`   |
 | `DELETE` | `/chargers/:id`                  | Delete a charger               | `204`   |
 
 When an ID does not exist, the API responds with `404 Not Found`.
+
+### Dashboard stats
+
+`GET /chargers/stats` returns charger counts by status, for the whole network or
+for one location (`?locationId=<id>`). The API computes them on every request,
+so they always match the current data.
+
+```json
+{
+  "total": 8,
+  "available": 4,
+  "occupied": 3,
+  "outOfService": 1,
+  "availabilityPct": 50
+}
+```
 
 ### Examples
 
@@ -151,6 +169,7 @@ src/
 └── chargers/
     ├── dto/
     ├── charger.entity.ts       # Charger model + statuses
+    ├── charger-stats.ts        # pure stats calculation (+ unit tests)
     ├── chargers.controller.ts
     ├── chargers.service.ts
     ├── chargers.module.ts
@@ -178,5 +197,5 @@ src/
 - [x] `Location` and `Charger` modules with CRUD and validation
 - [x] Seed data for 5 locations and 8 chargers
 - [x] Persistence in `@apify/hiring-document-database` (in memory, reset on restart)
-- [ ] Dashboard endpoint (one card per charger)
-- [ ] Unit and e2e tests for both modules
+- [x] Dashboard stats endpoint (`GET /chargers/stats`)
+- [ ] Unit and e2e tests for both modules (so far only the stats calculation has tests)

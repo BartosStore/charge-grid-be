@@ -2,6 +2,7 @@ import { Collection, Database } from '@apify/hiring-document-database';
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { generateId } from '../common/generate-id.js';
 import { LocationsService } from '../locations/locations.service.js';
+import { computeStats, type ChargerStats } from './charger-stats.js';
 import { CHARGERS_COLLECTION, type Charger } from './charger.entity.js';
 import { CreateChargerDto } from './dto/create-charger.dto.js';
 import { UpdateChargerDto } from './dto/update-charger.dto.js';
@@ -20,6 +21,14 @@ export class ChargersService {
   async findAll(locationId?: string): Promise<Charger[]> {
     const filter = locationId ? { locationId } : {};
     return (await this.chargers.list(filter).toArray()) as Charger[];
+  }
+
+  async getStats(locationId?: string): Promise<ChargerStats> {
+    if (locationId) {
+      // Throws 404 so the dashboard never shows a card for a missing location.
+      await this.locationsService.findOne(locationId);
+    }
+    return computeStats(await this.findAll(locationId));
   }
 
   async findOne(id: string): Promise<Charger> {
